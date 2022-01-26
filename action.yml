@@ -1,0 +1,11 @@
+name: 'Grade Homework'
+description: 'Request homework grade for late submissions'
+
+inputs:
+  token:
+    description: 'Authentication token to access repositories'
+    required: true
+
+runs:
+  using: 'node16'
+  main: 'index.js'

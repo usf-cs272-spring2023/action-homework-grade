@@ -6,10 +6,10 @@ on:
 
 jobs:
   main:
-    name: Grade Homework Job
+    name: Grade Homework
     runs-on: ubuntu-latest
     steps:
-      - name: Grade Homework Action
+      - name: Grade Homework
         uses: usf-cs272-spring2022/action-homework-grade@main
         id: action-homework-grade
         with:

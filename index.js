@@ -48,5 +48,6 @@ async function run() {
     core.info('');
     core.endGroup();
   }
+}
 
 run();

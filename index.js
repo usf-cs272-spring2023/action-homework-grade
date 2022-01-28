@@ -1,71 +1,52 @@
 const core = require('@actions/core');
 const github = require('@actions/github');
 
-const utils = require('./utils.js');
-
 async function run() {
   const states = {};
 
   try {
-    const issue = github.context.payload.issue;
+    const token = core.getInput('token');
+    core.setSecret(token);
 
-    // get details about issue, user, and repo from payload
-    states.issue_id = issue.id;
-    states.user_login = issue.user.login;
-    states.repo_name = github.context.payload.repository.name;
+    const octokit = github.getOctokit(token);
 
-    // attempt to parse configuration
-    const pattern = /```json([^`]+)```/;
-    const matches = issue.body.match(pattern);
+    states.owner = github.context.payload.organization.login;
+    states.actor = github.context.payload.issue.user.login;
+    states.repo = github.context.payload.repository.name;
+    states.issue_number = github.context.payload.issue.number;
 
-    try {
-      const config = JSON.parse(matches[1]);
-      console.log(config);
+    states.assignees = ['sjengle'];
+    states.run_event = 'push';
+    states.run_branch = 'main';
+    states.run_status = 'completed';
 
-      if (config.name && config.email) {
-        states.user_name = config.name;
-        states.user_email = config.email;
+    const result = await octokit.rest.issues.createComment({
+      owner: states.owner,
+      repo: states.repo,
+      issue_number: states.issue_number,
+      body: `This action is still under development. Please post on Piazza to have a late homework submission regraded.`
+    });
 
-        if (config.runid) {
-          states.run_id = config.runid;
-        }
-      }
-      else {
-        throw `Could not find "name" and "email" properties! Found: ${JSON.stringify(config)}`;
-      }
-    }
-    catch (error) {
-      // add warning to issue body
-      core.setFailed(error.message);
-    }
+    states.result = result;
+
+    // https://docs.github.com/en/rest/reference/actions#get-a-job-for-a-workflow-run
   }
   catch (error) {
     core.setFailed(error.message);
   }
   finally {
-    utils.saveStates(states);
+    core.startGroup('Saving state...');
+    core.info('');
+
+    for (const state in states) {
+      core.saveState(state, states[state]);
+      core.info(`Saved value ${states[state]} for state ${state}.`);
+    }
+
+    core.saveState('keys', JSON.stringify(Object.keys(states)));
+
+    core.info('');
+    core.endGroup();
   }
-}
 
 run();
-
-/*
-{
-  name: 'Your Name',
-  email: 'username@usfca.edu',
-  runid: undefined
-}
-
-
-Determine which action run to use.
-
-Get homework name, points, and date from run.
-
-Make sure it is past the deadline. Otherwise output warning.
-
-Make sure the name and email are provided. Otherwise output warning.
-
-
-
-
-*/

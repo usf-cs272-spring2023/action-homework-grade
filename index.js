@@ -1,6 +1,8 @@
 const core = require('@actions/core');
 const github = require('@actions/github');
-var { DateTime } = require('luxon');
+
+const { DateTime } = require('luxon');
+const zone = 'America/Los_Angeles';
 
 const deadlines = {
   ArgumentParser:   '2022-02-04',
@@ -48,8 +50,13 @@ async function run() {
     states.run_branch = 'main';
     states.run_status = 'completed';
 
-    states.homework = parseHomeworkName(states.repo);
-    states.deadline = deadlines[states.homework];
+    // get homework information
+    const homework = parseHomeworkName(states.repo);
+    const deadline = DateTime.fromISO(`${deadlines[states.homework]}T23:59:59`, {zone: zone});
+
+    states.homework = homework
+    states.deadline = deadline.toLocaleString(DateTime.DATETIME_FULL);
+    core.info(`Homework ${states.homework} due on ${states.deadline}.`);
 
     const result = await octokit.rest.issues.createComment({
       owner: states.owner,

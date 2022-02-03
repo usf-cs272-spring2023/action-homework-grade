@@ -18,7 +18,16 @@ const deadlines = {
   HeaderServer: 2022-05-06
 };
 
+function parseHomeworkName(repo) {
+  const regex = /^homework-([^-]+)-.+$/;
+  const matched = release.match(regex);
 
+  if (matched !== null && matched.length === 2) {
+    return matched[1];
+  }
+
+  throw new Error(`Unable to parse homework name from ${repo}. Matches: ${matched}`);
+}
 
 async function run() {
   const states = {};
@@ -38,6 +47,8 @@ async function run() {
     states.run_event = 'push';
     states.run_branch = 'main';
     states.run_status = 'completed';
+
+    states.homework = parseHomeworkName(states.repo);
 
     const result = await octokit.rest.issues.createComment({
       owner: states.owner,

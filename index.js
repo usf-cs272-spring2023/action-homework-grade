@@ -20,7 +20,7 @@ const deadlines = {
 
 function parseHomeworkName(repo) {
   const regex = /^homework-([^-]+)-.+$/;
-  const matched = release.match(regex);
+  const matched = repo.match(regex);
 
   if (matched !== null && matched.length === 2) {
     return matched[1];

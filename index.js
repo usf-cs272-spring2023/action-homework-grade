@@ -49,6 +49,7 @@ async function run() {
     states.run_status = 'completed';
 
     states.homework = parseHomeworkName(states.repo);
+    states.deadline = deadlines[states.homework];
 
     const result = await octokit.rest.issues.createComment({
       owner: states.owner,
@@ -56,6 +57,8 @@ async function run() {
       issue_number: states.issue_number,
       body: `This action is still under development. Please post on Piazza to have a late homework submission regraded.`
     });
+
+    core.info(JSON.stringify(result));
 
     states.result = result;
 

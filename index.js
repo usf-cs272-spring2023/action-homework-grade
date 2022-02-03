@@ -66,7 +66,7 @@ async function run() {
 
     // get homework information
     const homework = parseHomeworkName(states.repo);
-    const deadline = DateTime.fromISO(`${deadlines[states.homework]}T23:59:59`, {zone: zone});
+    const deadline = DateTime.fromISO(`${deadlines[homework]}T23:59:59`, {zone: zone});
 
     states.homework = homework
     states.deadline = deadline.toLocaleString(DateTime.DATETIME_FULL);

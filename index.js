@@ -16,6 +16,19 @@ const deadlines = {
   HtmlCleaner: 2022-04-29,
   HtmlFetcher: 2022-04-29,
   HeaderServer: 2022-05-06
+  ArgumentParser:   '2022-02-04',
+  TextFileStemmer:  '2022-02-25',
+  SimpleJsonWriter: '2022-02-25',
+  TextFileIndex:    '2022-02-25',
+  TextFileFinder:   '2022-03-25',
+  TextFileSorter:   '2022-03-25',
+  LoggerSetup:      '2022-04-08',
+  ReadWriteLock:    '2022-04-08',
+  PrimeFinder:      '2022-04-08',
+  LinkParser:       '2022-04-29',
+  HtmlCleaner:      '2022-04-29',
+  HtmlFetcher:      '2022-04-29',
+  HeaderServer:     '2022-05-06'
 };
 
 function parseHomeworkName(repo) {

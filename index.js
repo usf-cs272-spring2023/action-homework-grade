@@ -20,6 +20,20 @@ const deadlines = {
   HeaderServer:     '2022-05-06'
 };
 
+const deduction = 2;        // in points
+const duration  = 24;       // in hours
+const penalty   = 100 - 74; // maximum penalty
+
+// instructor and teacher assistants
+const assignees = [
+  'sjengle',
+  'igentle292',
+  'mtquach2',
+  'par5ul1',
+  'tydaljames',
+  'ybsolomon'
+];
+
 function parseHomeworkName(repo) {
   const regex = /^homework-([^-]+)-.+$/;
   const matched = repo.match(regex);
@@ -67,7 +81,7 @@ async function run() {
 
     core.info(JSON.stringify(result));
 
-    states.result = result;
+    states.comment_status = result.status;
 
     // https://docs.github.com/en/rest/reference/actions#get-a-job-for-a-workflow-run
   }

@@ -54,11 +54,7 @@ function parseIssueBody(body) {
       const parsed = JSON.parse(matched[1]);
 
       if (parsed.hasOwnProperty('name') && parsed.hasOwnProperty('username')) {
-        return {
-          name: parsed.name,
-          username: parsed.username,
-          runid: parsed.runid
-        };
+        return parsed;
       }
 
       throw new Error(`Required "name" and "username" properties missing from issue body.`);
@@ -72,6 +68,7 @@ function parseIssueBody(body) {
   }
 }
 
+
 async function run() {
   const token = core.getInput('token');
   core.setSecret(token);
@@ -81,9 +78,6 @@ async function run() {
   // set hard-coded values
   const states = {};
   states.assignees = assignees;
-  states.run_event = 'push';
-  states.run_branch = 'main';
-  states.run_status = 'completed';
 
   // get run details
   states.run_id = github.context.runId;
@@ -106,7 +100,20 @@ async function run() {
 
     // get student information from issue body
     const student = parseIssueBody(states.issue_body);
-    core.info(`Student information: ${JSON.stringify(student)}`);
+    core.info(`Student details: ${JSON.stringify(student)}`);
+
+    // get the run information
+    const runs = await octokit.rest.actions.listWorkflowRuns({
+      owner: states.owner,
+      repo: states.repo,
+      workflow_id: 'classroom.yml',
+      branch: 'main',
+      event: 'push',
+      status: 'completed',
+      per_page: 100
+    });
+
+    core.info(JSON.stringify(runs, undefined, 2));
 
     const result = await octokit.rest.issues.createComment({
       owner: states.owner,
@@ -129,9 +136,7 @@ async function run() {
 ${error.message}
 </blockquote>
 
-See [run number ${states.run_number} (id ${states.run_id})](${states.repo_url}/actions/runs/${states.run_id}) for additional details.
-
-After fixing the problem, you can re-trigger this action by closing and re-opening this issue. Please do *not* create a new issue.
+See [run number ${states.run_number} (id ${states.run_id})](${states.repo_url}/actions/runs/${states.run_id}) for additional details. After fixing the problem, you can re-trigger this action by closing and re-opening this issue. Please do *not* create a new issue.
 `;
 
       const result = await octokit.rest.issues.createComment({

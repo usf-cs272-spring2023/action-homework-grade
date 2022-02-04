@@ -119,25 +119,32 @@ async function run() {
       let runs = list_result.data.workflow_runs;
       let found = undefined;
 
+      core.info(`Found ${list_result.data.total_count} workflow runs...`);
+
+      // convert run date for each run
+      runs.forEach(run => {
+        run.run_date = DateTime.fromISO(run.run_started_at, {zone: zone});
+      });
+
       if (student.hasOwnProperty("runid")) {
-        // try to find associated run
+        // find associated run
         found = runs.find(r => parseInt(r.id) === parseInt(student.runid));
       }
 
       if (found === undefined) {
-        // try to find the most recent run
-        runs.forEach(run => {
-          run.run_date = DateTime.fromISO(run.run_started_at, {zone: zone});
-        });
-
+        // find the most recent run
         runs.sort((run1, run2) => {
-          return run1.run_date.toMillis() - run2.run_date.toMillis();
+          return run2.run_date.toMillis() - run1.run_date.toMillis();
         });
 
-        core.info(JSON.stringify(runs));
+        found = runs.shift();
       }
 
+      states.submitted_id = found.id;
+      states.submitted_date = found.run_date;
+      states.submitted_text = found.run_date.toLocaleString(DateTime.DATETIME_FULL);
 
+      core.info(`Using workflow run id ${states.submitted_id} from ${found.submitted_text}.`);
     }
     else {
       throw new Error(`Unable to fetch workflow runs! Status: ${list_result.status} Count: ${list_result.data.total_count}`);

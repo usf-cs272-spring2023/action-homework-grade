@@ -125,9 +125,9 @@ async function run() {
       const body = `
 :warning: @${states.actor} there was a problem with your request:
 
-\`\`\`
+<blockquote>
 ${error.message}
-\`\`\`
+</blockquote>
 
 See [run number ${states.run_number} (id ${states.run_id})](${states.repo_url}/actions/runs/${states.run_id}) for additional details.
 

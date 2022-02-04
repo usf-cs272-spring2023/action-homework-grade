@@ -103,7 +103,7 @@ async function run() {
     core.info(`Student details: ${JSON.stringify(student)}`);
 
     // get the run information
-    const runs = await octokit.rest.actions.listWorkflowRuns({
+    const list_result = await octokit.rest.actions.listWorkflowRuns({
       owner: states.owner,
       repo: states.repo,
       workflow_id: 'classroom.yml',
@@ -113,7 +113,35 @@ async function run() {
       per_page: 100
     });
 
-    core.info(JSON.stringify(runs, undefined, 2));
+    states.list_result = list_result.status;
+
+    if (list_result.status === 200 && list_result.data.total_count > 0) {
+      let runs = list_result.data.workflow_runs;
+      let found = undefined;
+
+      if (student.hasOwnProperty("runid")) {
+        // try to find associated run
+        found = runs.find(r => parseInt(r.id) === parseInt(student.runid));
+      }
+
+      if (found === undefined) {
+        // try to find the most recent run
+        runs.forEach(run => {
+          run.run_date = DateTime.fromISO(run.run_started_at, {zone: zone});
+        });
+
+        runs.sort((run1, run2) => {
+          return run1.run_date.toMillis() - run2.run_date.toMillis();
+        });
+
+        core.info(runs);
+      }
+
+
+    }
+    else {
+      throw new Error(`Unable to fetch workflow runs! Status: ${list_result.status} Count: ${list_result.data.total_count}`);
+    }
 
     const result = await octokit.rest.issues.createComment({
       owner: states.owner,
@@ -149,7 +177,7 @@ See [run number ${states.run_number} (id ${states.run_id})](${states.repo_url}/a
       states.error_status = result.status;
     }
     catch (failed) {
-      core.info(`Unable to comment on issue: ${failed}`);
+      core.warning(`Unable to comment on issue: ${failed.message}`);
     }
 
     core.setFailed(error.message);

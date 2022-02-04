@@ -154,10 +154,10 @@ async function run() {
     states.late_deduction = 0;
 
     if (states.submitted_date <= states.deadline) {
-      throw new Error(`The ${states.homework} assignment is not late. The assignment is due ${states.deadline_text} and [run number ${states.run_number} (id ${states.run_id})](${states.repo_url}/actions/runs/${states.run_id}) was submitted on ${states.submitted_text}.`);
+      throw new Error(`The ${states.homework} assignment is not late. The assignment is due ${states.deadline_text} and run id ${states.submitted_id} was submitted on ${states.submitted_text}.`);
     }
 
-    
+
 
     const result = await octokit.rest.issues.createComment({
       owner: states.owner,

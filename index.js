@@ -35,7 +35,6 @@ const assignees = [
 ];
 
 function parseHomeworkName(repo) {
-  repo = 'homework-HomeworkName-testing-dash-after'; // TODO
   const pattern = /^homework-([^-]+)-.+$/;
   const matched = repo.match(pattern);
 

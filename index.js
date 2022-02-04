@@ -65,32 +65,34 @@ function parseIssueBody(body) {
 }
 
 async function run() {
+  const token = core.getInput('token');
+  core.setSecret(token);
+
+  const octokit = github.getOctokit(token);
+
+  // set hard-coded values
   const states = {};
+  states.assignees = assignees;
+  states.run_event = 'push';
+  states.run_branch = 'main';
+  states.run_status = 'completed';
+
+  // get run details
+  states.run_id = github.context.run_id;
+  states.run_number = github.context.run_number;
+
+  // get payload values
+  states.owner = github.context.payload.organization.login;
+  states.actor = github.context.payload.issue.user.login;
+  states.repo = github.context.payload.repository.name;
+  states.issue_number = github.context.payload.issue.number;
+  states.issue_body = github.context.payload.issue.body;
 
   try {
-    const token = core.getInput('token');
-    core.setSecret(token);
-
-    const octokit = github.getOctokit(token);
-
-    // set hard-coded values
-    states.assignees = assignees;
-    states.run_event = 'push';
-    states.run_branch = 'main';
-    states.run_status = 'completed';
-
-    // get payload values
-    core.info(`Payload: ${JSON.stringify(github.context.payload)}`);
-    states.owner = github.context.payload.organization.login;
-    states.actor = github.context.payload.issue.user.login;
-    states.repo = github.context.payload.repository.name;
-    states.issue_number = github.context.payload.issue.number;
-    states.issue_body = github.context.payload.issue.body;
-
     // get homework name and deadline
     states.homework = parseHomeworkName(states.repo);
-    states.deadline_date = DateTime.fromISO(`${deadlines[states.homework]}T23:59:59`, {zone: zone});
-    states.deadline_text = states.deadline_date.toLocaleString(DateTime.DATETIME_FULL);
+    states.deadline = DateTime.fromISO(`${deadlines[states.homework]}T23:59:59`, {zone: zone});
+    states.deadline_text = states.deadline.toLocaleString(DateTime.DATETIME_FULL);
     core.info(`Homework ${states.homework} due on ${states.deadline_text}.`);
 
     // get student information
@@ -113,6 +115,31 @@ async function run() {
     // https://docs.github.com/en/rest/reference/actions#get-a-job-for-a-workflow-run
   }
   catch (error) {
+    // attempt to add error as comment if possible
+    try {
+      const body = `
+:warning: @${states.actor} there was a problem with your request. Please close and re-open this issue after fixing to re-trigger this action.
+
+### Error
+
+\`\`\`
+${error.message}
+\`\`\`
+`;
+
+      const result = await octokit.rest.issues.createComment({
+        owner: states.owner,
+        repo: states.repo,
+        issue_number: states.issue_number,
+        body: body
+      });
+
+      states.error_status = result.status;
+    }
+    catch (failed) {
+      core.info(`Unable to comment on issue: ${failed}`);
+    }
+
     core.setFailed(error.message);
   }
   finally {

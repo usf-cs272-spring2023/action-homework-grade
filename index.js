@@ -93,10 +93,6 @@ async function run() {
     states.deadline_text = states.deadline_date.toLocaleString(DateTime.DATETIME_FULL);
     core.info(`Homework ${states.homework} due on ${states.deadline_text}.`);
 
-    const emails = await octokit.rest.users.listEmailsForAuthenticatedUser();
-
-    core.info(JSON.stringify(emails));
-
     // get student information
     const student = parseIssueBody(state.issue_body);
     core.info(JSON.stringify(student));

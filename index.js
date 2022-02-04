@@ -51,16 +51,16 @@ function parseIssueBody(body) {
 
   if (matched !== null && matched.length === 2) {
     try {
-      const parsed = JSON.parse(matches[1]);
+      const parsed = JSON.parse(matched[1]);
 
       return parsed;
     }
     catch (error) {
-      throw new Error(`Unable to parse issue body to JSON. Error: ${error.message} Body: ${body}`);
+      throw new Error(`Unable to parse issue body to JSON. Error: ${error.message} Body: ${JSON.stringify(body)}`);
     }
   }
   else {
-    throw new Error(`Unable to parse details from issue body. Matches: ${matched} Body: ${body}`);
+    throw new Error(`Unable to parse details from issue body. Matches: ${matched} Body: ${JSON.stringify(body)}`);
   }
 }
 
@@ -118,13 +118,13 @@ async function run() {
     // attempt to add error as comment if possible
     try {
       const body = `
-:warning: @${states.actor} there was a problem with your request. Please close and re-open this issue after fixing to re-trigger this action.
-
-### Error
+:warning: @${states.actor} there was a problem with your request:
 
 \`\`\`
 ${error.message}
 \`\`\`
+
+After fixing the problem, you can re-trigger this action by closing and re-opening this issue. Please do *not* create a new issue.
 `;
 
       const result = await octokit.rest.issues.createComment({
@@ -143,6 +143,14 @@ ${error.message}
     core.setFailed(error.message);
   }
   finally {
+    // display context for debugging
+    core.startGroup('Displaying context...');
+    core.info('');
+    core.info(JSON.stringify(github.context, undefined, 2));
+    core.info('');
+    core.endGroup();
+
+    // display state for debugging
     core.startGroup('Saving state...');
     core.info('');
 
@@ -152,7 +160,6 @@ ${error.message}
     }
 
     core.saveState('keys', JSON.stringify(Object.keys(states)));
-
     core.info('');
     core.endGroup();
   }

@@ -80,7 +80,7 @@ async function run() {
     states.run_status = 'completed';
 
     // get payload values
-    core.info(`Payload: ${JSON.stringify(github.context.payload, undefined, 2)}`);
+    core.info(`Payload: ${JSON.stringify(github.context.payload)}`);
     states.owner = github.context.payload.organization.login;
     states.actor = github.context.payload.issue.user.login;
     states.repo = github.context.payload.repository.name;

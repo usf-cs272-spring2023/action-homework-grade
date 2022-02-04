@@ -149,6 +149,16 @@ async function run() {
       throw new Error(`Unable to fetch workflow runs. Status: ${list_result.status} Count: ${list_result.data.total_count}`);
     }
 
+    // calculate grade penalty
+    states.late_days = 0;
+    states.late_deduction = 0;
+
+    if (states.submitted_date <= states.deadline) {
+      throw new Error(`The ${states.homework} assignment is not late. The assignment is due ${states.deadline_text} and [run number ${states.run_number} (id ${states.run_id})](${states.repo_url}/actions/runs/${states.run_id}) was submitted on ${states.submitted_text}.`);
+    }
+
+    
+
     const result = await octokit.rest.issues.createComment({
       owner: states.owner,
       repo: states.repo,
@@ -170,20 +180,30 @@ async function run() {
 ${error.message}
 </blockquote>
 
-See [run number ${states.run_number} (id ${states.run_id})](${states.repo_url}/actions/runs/${states.run_id}) for additional details. After fixing the problem, you can re-trigger this action by closing and re-opening this issue. Please do *not* create a new issue.
+See [run number ${states.run_number} (id ${states.run_id})](${states.repo_url}/actions/runs/${states.run_id}) for additional details. After fixing the problem, you can re-trigger this action by re-opening this issue. Please do *not* create a new issue.
 `;
 
-      const result = await octokit.rest.issues.createComment({
+      const comment_result = await octokit.rest.issues.createComment({
         owner: states.owner,
         repo: states.repo,
         issue_number: states.issue_number,
         body: body
       });
 
-      states.error_status = result.status;
+      states.error_comment = comment_result.status;
+
+      const close_result = await octokit.rest.issues.update({
+        owner: states.owner,
+        repo: states.repo,
+        issue_number: states.issue_number,
+        state: 'closed',
+        assignees: [states.actor]
+      });
+
+      states.error_close = close_result.status;
     }
     catch (failed) {
-      core.warning(`Unable to comment on issue: ${failed.message}`);
+      core.warning(`Unable to update issue: ${failed.message}`);
     }
 
     core.setFailed(error.message);

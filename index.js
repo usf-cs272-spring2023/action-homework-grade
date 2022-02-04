@@ -89,7 +89,6 @@ async function run() {
   states.repo = github.context.payload.repository.name;
   states.repo_url = github.context.payload.repository.html_url;
   states.issue_number = github.context.payload.issue.number;
-  states.issue_body = github.context.payload.issue.body;
 
   try {
     // get homework name and deadline
@@ -99,7 +98,7 @@ async function run() {
     core.info(`Homework ${states.homework} due on ${states.deadline_text}.`);
 
     // get student information from issue body
-    const student = parseIssueBody(states.issue_body);
+    const student = parseIssueBody(github.context.payload.issue.body);
     core.info(`Student details: ${JSON.stringify(student)}`);
 
     // get the run information
@@ -144,10 +143,10 @@ async function run() {
       states.submitted_date = found.run_date;
       states.submitted_text = found.run_date.toLocaleString(DateTime.DATETIME_FULL);
 
-      core.info(`Using workflow run id ${states.submitted_id} from ${found.submitted_text}.`);
+      core.info(`Using workflow run id ${states.submitted_id} from ${states.submitted_text}.`);
     }
     else {
-      throw new Error(`Unable to fetch workflow runs! Status: ${list_result.status} Count: ${list_result.data.total_count}`);
+      throw new Error(`Unable to fetch workflow runs. Status: ${list_result.status} Count: ${list_result.data.total_count}`);
     }
 
     const result = await octokit.rest.issues.createComment({

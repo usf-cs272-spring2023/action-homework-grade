@@ -94,7 +94,7 @@ async function run() {
     core.info(`Homework ${states.homework} due on ${states.deadline_text}.`);
 
     // get student information
-    const student = parseIssueBody(state.issue_body);
+    const student = parseIssueBody(states.issue_body);
     core.info(JSON.stringify(student));
 
     const result = await octokit.rest.issues.createComment({

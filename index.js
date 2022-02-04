@@ -53,14 +53,22 @@ function parseIssueBody(body) {
     try {
       const parsed = JSON.parse(matched[1]);
 
-      return parsed;
+      if (parsed.hasOwnProperty('name') && parsed.hasOwnProperty('username')) {
+        return {
+          name: parsed.name,
+          username: parsed.username,
+          runid: parsed.runid
+        };
+      }
+
+      throw new Error(`Required "name" and "username" properties missing from issue body.`);
     }
     catch (error) {
-      throw new Error(`Unable to parse issue body to JSON. Error: ${error.message} Body: ${JSON.stringify(body)}`);
+      throw new Error(`Unable to parse issue body as JSON. Error: ${error.message}`);
     }
   }
   else {
-    throw new Error(`Unable to parse details from issue body. Matches: ${matched} Body: ${JSON.stringify(body)}`);
+    throw new Error(`Unable to find JSON details from issue body. Found: ${matched}`);
   }
 }
 
@@ -78,13 +86,14 @@ async function run() {
   states.run_status = 'completed';
 
   // get run details
-  states.run_id = github.context.run_id;
-  states.run_number = github.context.run_number;
+  states.run_id = github.context.runId;
+  states.run_number = github.context.runNumber;
 
   // get payload values
   states.owner = github.context.payload.organization.login;
   states.actor = github.context.payload.issue.user.login;
   states.repo = github.context.payload.repository.name;
+  states.repo_url = github.context.payload.repository.html_url;
   states.issue_number = github.context.payload.issue.number;
   states.issue_body = github.context.payload.issue.body;
 
@@ -95,9 +104,9 @@ async function run() {
     states.deadline_text = states.deadline.toLocaleString(DateTime.DATETIME_FULL);
     core.info(`Homework ${states.homework} due on ${states.deadline_text}.`);
 
-    // get student information
+    // get student information from issue body
     const student = parseIssueBody(states.issue_body);
-    core.info(JSON.stringify(student));
+    core.info(`Student information: ${JSON.stringify(student)}`);
 
     const result = await octokit.rest.issues.createComment({
       owner: states.owner,
@@ -106,13 +115,9 @@ async function run() {
       body: `This action is still under development. Please post on Piazza to have a late homework submission regraded.`
     });
 
-    core.info(JSON.stringify(result));
-
     states.comment_status = result.status;
 
     // https://octokit.github.io/rest.js/v18
-
-    // https://docs.github.com/en/rest/reference/actions#get-a-job-for-a-workflow-run
   }
   catch (error) {
     // attempt to add error as comment if possible
@@ -123,6 +128,8 @@ async function run() {
 \`\`\`
 ${error.message}
 \`\`\`
+
+See [run number ${states.run_number} (id ${states.run_id})](${states.repo_url}/actions/runs/${states.run_id}) for additional details.
 
 After fixing the problem, you can re-trigger this action by closing and re-opening this issue. Please do *not* create a new issue.
 `;

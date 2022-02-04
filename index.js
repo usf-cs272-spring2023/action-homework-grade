@@ -149,15 +149,34 @@ async function run() {
       throw new Error(`Unable to fetch workflow runs. Status: ${list_result.status} Count: ${list_result.data.total_count}`);
     }
 
+    // get number of points from run
+    const file_result = octokit.rest.actions.listWorkflowRunArtifacts({
+      owner: states.owner,
+      repo: states.repo,
+      run_id: states.submitted_id
+    });
+
+    if (file_result.status === 200 && file_result.data.total_count > 0) {
+      states.submitted_points = parseInt(file_result.artifacts[0].name);
+
+      if (states.submitted_points === NaN) {
+        throw new Error(`Unable to parse points from artifact name: ${file_result.artifacts[0].name}`);
+      }
+    }
+    else {
+      throw new Error(`Unable to fetch workflow artifacts. Status: ${file_result.status} Count: ${file_result.data.total_count}`);
+    }
+
     // calculate grade penalty
     states.late_days = 0;
     states.late_deduction = 0;
 
     if (states.submitted_date <= states.deadline) {
-      throw new Error(`The ${states.homework} assignment is not late. The assignment is due ${states.deadline_text} and run id ${states.submitted_id} was submitted on ${states.submitted_text}.`);
+      core.warning(`The run id ${states.submitted_id} was submitted on ${states.submitted_text}, before the ${states.deadline_text} for the ${states.homework} assignment.`);
     }
-
-
+    else {
+      
+    }
 
     const result = await octokit.rest.issues.createComment({
       owner: states.owner,

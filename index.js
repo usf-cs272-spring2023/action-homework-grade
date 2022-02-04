@@ -134,7 +134,7 @@ async function run() {
           return run1.run_date.toMillis() - run2.run_date.toMillis();
         });
 
-        core.info(runs);
+        core.info(JSON.stringify(runs));
       }
 
 

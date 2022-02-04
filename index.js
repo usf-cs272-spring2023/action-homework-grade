@@ -35,14 +35,34 @@ const assignees = [
 ];
 
 function parseHomeworkName(repo) {
-  const regex = /^homework-([^-]+)-.+$/;
-  const matched = repo.match(regex);
+  repo = 'homework-HomeworkName-testing-dash-after'; // TODO
+  const pattern = /^homework-([^-]+)-.+$/;
+  const matched = repo.match(pattern);
 
   if (matched !== null && matched.length === 2) {
     return matched[1];
   }
 
   throw new Error(`Unable to parse homework name from ${repo}. Matches: ${matched}`);
+}
+
+function parseIssueBody(body) {
+  const pattern = /```json([^`]+)```/;
+  const matched = body.match(pattern);
+
+  if (matched !== null && matched.length === 2) {
+    try {
+      const parsed = JSON.parse(matches[1]);
+
+      return parsed;
+    }
+    catch (error) {
+      throw new Error(`Unable to parse issue body to JSON. Error: ${error.message} Body: ${body}`);
+    }
+  }
+  else {
+    throw new Error(`Unable to parse details from issue body. Matches: ${matched} Body: ${body}`);
+  }
 }
 
 async function run() {
@@ -54,23 +74,29 @@ async function run() {
 
     const octokit = github.getOctokit(token);
 
-    states.owner = github.context.payload.organization.login;
-    states.actor = github.context.payload.issue.user.login;
-    states.repo = github.context.payload.repository.name;
-    states.issue_number = github.context.payload.issue.number;
-
-    states.assignees = ['sjengle'];
+    // set hard-coded values
+    states.assignees = assignees;
     states.run_event = 'push';
     states.run_branch = 'main';
     states.run_status = 'completed';
 
-    // get homework information
-    const homework = parseHomeworkName(states.repo);
-    const deadline = DateTime.fromISO(`${deadlines[homework]}T23:59:59`, {zone: zone});
+    // get payload values
+    core.info(`Payload: ${JSON.stringify(github.context.payload, undefined, 2)}`);
+    states.owner = github.context.payload.organization.login;
+    states.actor = github.context.payload.issue.user.login;
+    states.repo = github.context.payload.repository.name;
+    states.issue_number = github.context.payload.issue.number;
+    states.issue_body = github.context.payload.issue.body;
 
-    states.homework = homework
-    states.deadline = deadline.toLocaleString(DateTime.DATETIME_FULL);
-    core.info(`Homework ${states.homework} due on ${states.deadline}.`);
+    // get homework name and deadline
+    states.homework = parseHomeworkName(states.repo);
+    states.deadline_date = DateTime.fromISO(`${deadlines[states.homework]}T23:59:59`, {zone: zone});
+    states.deadline_text = states.deadline_date.toLocaleString(DateTime.DATETIME_FULL);
+    core.info(`Homework ${states.homework} due on ${states.deadline_text}.`);
+
+    // get student information
+    const student = parseIssueBody(state.issue_body);
+    core.info(JSON.stringify(student));
 
     const result = await octokit.rest.issues.createComment({
       owner: states.owner,

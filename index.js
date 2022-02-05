@@ -138,7 +138,7 @@ async function run() {
           return run2.run_date.toMillis() - run1.run_date.toMillis();
         });
 
-        found = runs.shift();
+        found = runs.pop();
       }
 
       states.submitted_id = found.id;

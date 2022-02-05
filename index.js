@@ -150,7 +150,7 @@ async function run() {
     }
 
     // get number of points from run
-    const file_result = octokit.rest.actions.listWorkflowRunArtifacts({
+    const file_result = await octokit.rest.actions.listWorkflowRunArtifacts({
       owner: states.owner,
       repo: states.repo,
       run_id: states.submitted_id

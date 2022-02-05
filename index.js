@@ -134,11 +134,11 @@ async function run() {
 
       if (found === undefined) {
         // find the most recent run
-        runs.sort((run1, run2) => {
-          return run2.run_date.toMillis() - run1.run_date.toMillis();
-        });
+        // runs.sort((run1, run2) => {
+        //   return run2.run_date.toMillis() - run1.run_date.toMillis();
+        // });
 
-        found = runs.pop();
+        found = runs.shift();
       }
 
       states.submitted_id = found.id;

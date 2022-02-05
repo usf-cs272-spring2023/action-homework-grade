@@ -156,8 +156,6 @@ async function run() {
       run_id: states.submitted_id
     });
 
-    core.info(JSON.stringify(file_result, undefined, 2));
-
     if (file_result.status === 200 && file_result.data.total_count > 0) {
       states.submitted_points = parseInt(file_result.data.artifacts[0].name);
 
@@ -181,10 +179,10 @@ async function run() {
       const late_diff = states.submitted_date.diff(states.deadline, 'hours');
       const late_hours = late_diff.toObject().hours;
 
-      core.info(`The run id ${states.submitted_id} was submitted on ${states.submitted_text}, which is ${late_hours} after the ${states.deadline_text} deadline for the ${states.homework} assignment.`);
+      core.info(`The run id ${states.submitted_id} was submitted on ${states.submitted_text}, which is ${Math.round(late_hours)} after the ${states.deadline_text} deadline for the ${states.homework} assignment.`);
 
       states.late_multiplier = 1 + Math.floor(late_hours / duration);
-      states.late_deduction = Math.min(penalty, late_multiplier * deduction);
+      states.late_deduction = Math.min(penalty, states.late_multiplier * deduction);
       states.late_grade = states.submitted_points - states.late_deduction;
 
       core.info(`Using a ${states.late_multiplier}x late penalty multiplier for a deduction of ${states.late_deduction} points and ${states.late_grade} late grade.`);

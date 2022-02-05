@@ -6,7 +6,7 @@ const zone = 'America/Los_Angeles';
 
 const deadlines = {
   ArgumentParser:   '2022-02-04',
-  TextFileStemmer:  '2022-02-25',
+  TextFileStemmer:  '2022-02-03', // TODO
   SimpleJsonWriter: '2022-02-25',
   TextFileIndex:    '2022-02-25',
   TextFileFinder:   '2022-03-25',
@@ -170,14 +170,24 @@ async function run() {
     }
 
     // calculate grade penalty
-    states.late_days = 0;
+    states.late_multiplier = 0;
     states.late_deduction = 0;
+    states.late_grade = states.submitted_points;
 
     if (states.submitted_date <= states.deadline) {
-      core.warning(`The run id ${states.submitted_id} was submitted on ${states.submitted_text}, before the ${states.deadline_text} for the ${states.homework} assignment.`);
+      core.warning(`The run id ${states.submitted_id} was submitted on ${states.submitted_text}, before the ${states.deadline_text} deadline for the ${states.homework} assignment.`);
     }
     else {
+      const late_diff = states.submitted_date.diff(states.deadline, 'hours');
+      const late_hours = late_diff.toObject().hours;
 
+      core.info(`The run id ${states.submitted_id} was submitted on ${states.submitted_text}, which is ${late_hours} after the ${states.deadline_text} deadline for the ${states.homework} assignment.`);
+
+      states.late_multiplier = 1 + Math.floor(late_hours / duration);
+      states.late_deduction = Math.min(penalty, late_multiplier * deduction);
+      states.late_grade = states.submitted_points - states.late_deduction;
+
+      core.info(`Using a ${states.late_multiplier}x late penalty multiplier for a deduction of ${states.late_deduction} points and ${states.late_grade} late grade.`);
     }
 
     const result = await octokit.rest.issues.createComment({

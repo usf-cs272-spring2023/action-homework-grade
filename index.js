@@ -6,7 +6,7 @@ const zone = 'America/Los_Angeles';
 
 const deadlines = {
   ArgumentParser:   '2022-02-04',
-  TextFileStemmer:  '2022-02-03', // TODO
+  TextFileStemmer:  '2022-01-01', // TODO
   SimpleJsonWriter: '2022-02-25',
   TextFileIndex:    '2022-02-25',
   TextFileFinder:   '2022-03-25',
@@ -134,10 +134,6 @@ async function run() {
 
       if (found === undefined) {
         // find the most recent run
-        // runs.sort((run1, run2) => {
-        //   return run2.run_date.toMillis() - run1.run_date.toMillis();
-        // });
-
         found = runs.shift();
       }
 

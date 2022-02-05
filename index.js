@@ -6,7 +6,7 @@ const zone = 'America/Los_Angeles';
 
 const deadlines = {
   ArgumentParser:   '2022-02-04',
-  TextFileStemmer:  '2022-01-01', // TODO
+  TextFileStemmer:  '2022-02-25',
   SimpleJsonWriter: '2022-02-25',
   TextFileIndex:    '2022-02-25',
   TextFileFinder:   '2022-03-25',

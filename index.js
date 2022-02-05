@@ -100,6 +100,8 @@ async function run() {
     // get student information from issue body
     const student = parseIssueBody(github.context.payload.issue.body);
     core.info(`Student details: ${JSON.stringify(student)}`);
+    states.student = student.name;
+    states.username = student.username;
 
     // get the run information
     const list_result = await octokit.rest.actions.listWorkflowRuns({
@@ -179,23 +181,56 @@ async function run() {
       const late_diff = states.submitted_date.diff(states.deadline, 'hours');
       const late_hours = late_diff.toObject().hours;
 
-      core.info(`The run id ${states.submitted_id} was submitted on ${states.submitted_text}, which is ${Math.round(late_hours)} after the ${states.deadline_text} deadline for the ${states.homework} assignment.`);
+      core.info(`The run id ${states.submitted_id} was submitted on ${states.submitted_text}, which is ${Math.round(late_hours)} hours after the ${states.deadline_text} deadline for the ${states.homework} assignment.`);
 
       states.late_multiplier = 1 + Math.floor(late_hours / duration);
       states.late_deduction = Math.min(penalty, states.late_multiplier * deduction);
       states.late_grade = states.submitted_points - states.late_deduction;
 
-      core.info(`Using a ${states.late_multiplier}x late penalty multiplier for a deduction of ${states.late_deduction} points and ${states.late_grade} late grade.`);
+      core.notice(`Using a ${states.late_multiplier}x late penalty multiplier for a deduction of ${states.late_deduction} points and late grade of ${states.late_grade} points.`);
     }
 
-    const result = await octokit.rest.issues.createComment({
+    // add a comment with the details
+    const body = `
+:octocat: @${states.actor} your late request has been processed! See the details below.
+
+|  |  |
+|----:|:-----|
+| Student: | ${states.student} |
+| Username: | \`${states.username}\` |
+| | |
+| Homework: | \`${states.homework}\` |
+| Deadline: | ${states.deadline_text} |
+| Submitted: | ${states.submitted_text} |
+| | |
+| Autograder Run: | [Run ID ${states.submitted_id}](${states.repo_url}/actions/runs/${states.submitted_id}) |
+| Autograder Grade: | ${states.submitted_points} points |
+| | |
+| Late Grade: | ${states.late_grade} points |
+| Late Penalty: | ${states.late_deduction} points |
+| Late Days: | ${states.late_multiplier} days |
+
+You will receive a notice once your grade has been updated on Canvas.
+`;
+
+    const comment_result = await octokit.rest.issues.createComment({
       owner: states.owner,
       repo: states.repo,
       issue_number: states.issue_number,
-      body: `This action is still under development. Please post on Piazza to have a late homework submission regraded.`
+      body: body
     });
 
-    states.comment_status = result.status;
+    states.comment_status = comment_result.status;
+
+    const update_result = await octokit.rest.issues.update({
+      owner: states.owner,
+      repo: states.repo,
+      issue_number: states.issue_number,
+      state: 'open',
+      assignees: assignees
+    });
+
+    states.update_status = update_result.status;
 
     // https://octokit.github.io/rest.js/v18
   }

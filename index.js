@@ -156,8 +156,10 @@ async function run() {
       run_id: states.submitted_id
     });
 
+    core.info(JSON.stringify(file_result, undefined, 2));
+
     if (file_result.status === 200 && file_result.data.total_count > 0) {
-      states.submitted_points = parseInt(file_result.artifacts[0].name);
+      states.submitted_points = parseInt(file_result.data.artifacts[0].name);
 
       if (states.submitted_points === NaN) {
         throw new Error(`Unable to parse points from artifact name: ${file_result.artifacts[0].name}`);
@@ -175,7 +177,7 @@ async function run() {
       core.warning(`The run id ${states.submitted_id} was submitted on ${states.submitted_text}, before the ${states.deadline_text} for the ${states.homework} assignment.`);
     }
     else {
-      
+
     }
 
     const result = await octokit.rest.issues.createComment({

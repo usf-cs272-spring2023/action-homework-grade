@@ -107,10 +107,10 @@ async function run() {
     const list_result = await octokit.rest.actions.listWorkflowRuns({
       owner: states.owner,
       repo: states.repo,
-      workflow_id: 'classroom.yml',
-      branch: 'main',
-      event: 'push',
-      status: 'completed',
+      workflow_id: 'classroom.yml'//, TODO Removing due to indexing issues
+      //branch: 'main',
+      //event: 'push',
+      //status: 'completed',
       per_page: 100
     });
 
@@ -121,6 +121,10 @@ async function run() {
       let found = undefined;
 
       core.info(`Found ${list_result.data.total_count} workflow runs...`);
+
+      // filter by completed runs
+      runs = runs.filter(r => r.status == 'completed' && r.head_branch == 'main');
+      core.info(`Found ${runs.length} completed workflow runs...`);
 
       // convert run date for each run
       runs.forEach(run => {

@@ -107,7 +107,8 @@ async function run() {
     const list_result = await octokit.rest.actions.listWorkflowRuns({
       owner: states.owner,
       repo: states.repo,
-      workflow_id: 'classroom.yml'//, TODO Removing due to indexing issues
+      workflow_id: 'classroom.yml',
+      // TODO Removing due to indexing issues
       //branch: 'main',
       //event: 'push',
       //status: 'completed',

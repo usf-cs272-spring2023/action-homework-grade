@@ -8,15 +8,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/usf-cs272-spring2022/action-homework-grade.git"
+    "url": "git+https://github.com/usf-cs272-fall2022/action-homework-grade.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/usf-cs272-spring2022/action-homework-grade/issues"
+    "url": "https://github.com/usf-cs272-fall2022/action-homework-grade/issues"
   },
-  "homepage": "https://github.com/usf-cs272-spring2022/action-homework-grade#readme",
+  "homepage": "https://github.com/usf-cs272-fall2022/action-homework-grade#readme",
   "dependencies": {
     "@actions/core": "^1.6.0",
     "@actions/github": "^5.0.0",

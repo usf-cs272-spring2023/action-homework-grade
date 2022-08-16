@@ -97,16 +97,7 @@ async function run() {
       let runs = list_result.data.workflow_runs;
       let found = undefined;
 
-      core.info(`Found ${list_result.data.total_count} workflow runs...`);
-
-      // filter by completed runs
-      runs = runs.filter(r => r.status == 'completed' && r.head_branch == 'main');
-      core.info(`Found ${runs.length} completed workflow runs...`);
-
-      // convert run date for each run
-      // runs.forEach(run => {
-      //   run.run_date = DateTime.fromISO(run.run_started_at, {zone: zone});
-      // });
+      core.info(`Found ${list_result.data.total_count} completed workflow runs...`);
 
       if (student.hasOwnProperty("runid")) {
         // find associated run
@@ -119,11 +110,11 @@ async function run() {
         found = runs.shift();
       }
 
-      states.submitted_id   = found.id;
-      // states.submitted_date = found.run_date;
-      // states.submitted_text = found.run_date.toLocaleString(DateTime.DATETIME_FULL);
+      states.submitted_id = found.id;
 
-      core.info(`Using workflow run id: ${states.submitted_id}`);
+      core.startGroup(`Using workflow run id: ${states.submitted_id}`);
+      core.info(JSON.stringify(found));
+      core.endGroup();
     }
     else {
       throw new Error(`Unable to fetch workflow runs. Status: ${list_result.status} Count: ${list_result.data.total_count}`);
@@ -135,18 +126,30 @@ async function run() {
       repo: states.repo,
       run_id: states.submitted_id
     });
-
+    
     if (file_result.status === 200 && file_result.data.total_count > 0) {
-      const downloaded = await artifactClient.downloadArtifact('check-deadline-results', '.');
-      core.info(JSON.stringify(downloaded));
+      core.startGroup(`Found artifacts: ${file_result.data.total_count}`);
+      core.info(JSON.stringify(file_result.data));
+      core.endGroup();
 
-      const results_text = fs.readFileSync('./check-deadline-results.json', 'utf8');
-      const results_json = JSON.parse(results_text);
+      const artifact_result = await octokit.rest.actions.downloadArtifact({
+        owner: states.owner,
+        repo: states.repo,
+        artifact_id: file_result.data.artifacts[0].id,
+        archive_format: 'zip'
+      });
 
-      for (const property in results_json) {
-        console.log(`${property}: ${results_json[property]}`);
-        states[property] = results_json[property];
-      }
+      core.info(JSON.stringify(artifact_result));
+
+      throw new Error('Stop here.');
+
+      // const results_text = fs.readFileSync('./check-deadline-results.json', 'utf8');
+      // const results_json = JSON.parse(results_text);
+
+      // for (const property in results_json) {
+      //   console.log(`${property}: ${results_json[property]}`);
+      //   states[property] = results_json[property];
+      // }
     }
     else {
       throw new Error(`Unable to fetch workflow artifacts. Status: ${file_result.status} Count: ${file_result.data.total_count}`);

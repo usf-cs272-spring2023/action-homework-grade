@@ -5,9 +5,7 @@ const artifact = require('@actions/artifact');
 const artifactClient = artifact.create();
 
 const fs = require('fs');
-const { request } = require('http');
-// const { DateTime } = require('luxon');
-// const zone = 'America/Los_Angeles';
+const https = require('https');
 
 // instructor and teacher assistants
 const assignees = [
@@ -145,11 +143,16 @@ async function run() {
       if (download_result.status === 200) {
         core.info(JSON.stringify(download_result));
 
-        request(download_result.url)
-          .pipe(fs.createWriteStream(`${artifact_data.name}.zip`))
-          .on('close', function () {
-            console.log('File written!');
+        https.get(download_result.url, function(response) {
+          console.log("statusCode: ", response.statusCode);
+          console.log("headers: ", response.headers);
+
+          response.on('data', function(d) {
+            process.stdout.write(d);
           });
+        }).on('error', function(e) {
+          throw e;
+        });
       }
       else {
         throw new Error(`Unable to get download link for artifact ${list_artifacts.data.artifacts[0].id}. Status: ${download_result.status}`);

@@ -5,6 +5,7 @@ const artifact = require('@actions/artifact');
 const artifactClient = artifact.create();
 
 const fs = require('fs');
+const { request } = require('http');
 // const { DateTime } = require('luxon');
 // const zone = 'America/Los_Angeles';
 
@@ -132,15 +133,23 @@ async function run() {
       core.info(JSON.stringify(list_artifacts.data));
       core.endGroup();
 
+      const artifact_data = list_artifacts.data.artifacts[0];
+
       const download_result = await octokit.rest.actions.downloadArtifact({
         owner: states.owner,
         repo: states.repo,
-        artifact_id: list_artifacts.data.artifacts[0].id,
+        artifact_id: artifact_data.id,
         archive_format: 'zip'
       });
 
       if (download_result.status === 200) {
         core.info(JSON.stringify(download_result));
+
+        request(download_result.url)
+          .pipe(fs.createWriteStream(`${artifact_data.name}.zip`))
+          .on('close', function () {
+            console.log('File written!');
+          });
       }
       else {
         throw new Error(`Unable to get download link for artifact ${list_artifacts.data.artifacts[0].id}. Status: ${download_result.status}`);

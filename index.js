@@ -121,26 +121,31 @@ async function run() {
     }
 
     // get number of points from run
-    const file_result = await octokit.rest.actions.listWorkflowRunArtifacts({
+    const list_artifacts = await octokit.rest.actions.listWorkflowRunArtifacts({
       owner: states.owner,
       repo: states.repo,
       run_id: states.submitted_id
     });
     
-    if (file_result.status === 200 && file_result.data.total_count > 0) {
-      core.startGroup(`Found artifacts: ${file_result.data.total_count}`);
-      core.info(JSON.stringify(file_result.data));
+    if (list_artifacts.status === 200 && list_artifacts.data.total_count > 0) {
+      core.startGroup(`Found artifacts: ${list_artifacts.data.total_count}`);
+      core.info(JSON.stringify(list_artifacts.data));
       core.endGroup();
 
-      const artifact_result = await octokit.rest.actions.downloadArtifact({
+      const download_result = await octokit.rest.actions.downloadArtifact({
         owner: states.owner,
         repo: states.repo,
-        artifact_id: file_result.data.artifacts[0].id,
+        artifact_id: list_artifacts.data.artifacts[0].id,
         archive_format: 'zip'
       });
 
-      core.info(JSON.stringify(artifact_result));
-
+      if (download_result.status === 200) {
+        core.info(JSON.stringify(download_result));
+      }
+      else {
+        throw new Error(`Unable to get download link for artifact ${list_artifacts.data.artifacts[0].id}. Status: ${download_result.status}`);
+      }
+      
       throw new Error('Stop here.');
 
       // const results_text = fs.readFileSync('./check-deadline-results.json', 'utf8');
@@ -152,7 +157,7 @@ async function run() {
       // }
     }
     else {
-      throw new Error(`Unable to fetch workflow artifacts. Status: ${file_result.status} Count: ${file_result.data.total_count}`);
+      throw new Error(`Unable to list workflow artifacts. Status: ${file_result.status} Count: ${file_result.data.total_count}`);
     }
 
     // add a comment with the details

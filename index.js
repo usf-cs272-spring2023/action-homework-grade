@@ -1,37 +1,16 @@
 const core = require('@actions/core');
 const github = require('@actions/github');
 
+const fs = require('fs');
 const { DateTime } = require('luxon');
 const zone = 'America/Los_Angeles';
-
-const deadlines = {
-  ArgumentParser:   '2022-02-04',
-  TextFileStemmer:  '2022-02-25',
-  SimpleJsonWriter: '2022-02-25',
-  TextFileIndex:    '2022-02-25',
-  TextFileFinder:   '2022-03-25',
-  TextFileSorter:   '2022-03-25',
-  LoggerSetup:      '2022-04-08',
-  ReadWriteLock:    '2022-04-08',
-  PrimeFinder:      '2022-04-08',
-  LinkParser:       '2022-04-29',
-  HtmlCleaner:      '2022-04-29',
-  HtmlFetcher:      '2022-04-29',
-  HeaderServer:     '2022-05-06'
-};
-
-const deduction = 2;        // in points
-const duration  = 24;       // in hours
-const penalty   = 100 - 74; // maximum penalty
 
 // instructor and teacher assistants
 const assignees = [
   'sjengle',
   'igentle292',
   'mtquach2',
-  'par5ul1',
-  'tydaljames',
-  'ybsolomon'
+  'par5ul1'
 ];
 
 function parseHomeworkName(repo) {
@@ -53,11 +32,11 @@ function parseIssueBody(body) {
     try {
       const parsed = JSON.parse(matched[1]);
 
-      if (parsed.hasOwnProperty('name') && parsed.hasOwnProperty('username')) {
+      if (parsed.hasOwnProperty('name') && parsed.hasOwnProperty('user')) {
         return parsed;
       }
 
-      throw new Error(`Required "name" and "username" properties missing from issue body.`);
+      throw new Error(`Required "name" and "user" properties missing from issue body.`);
     }
     catch (error) {
       throw new Error(`Unable to parse issue body as JSON. Error: ${error.message}`);
@@ -67,7 +46,6 @@ function parseIssueBody(body) {
     throw new Error(`Unable to find JSON details from issue body. Found: ${matched}`);
   }
 }
-
 
 async function run() {
   const token = core.getInput('token');
@@ -93,25 +71,20 @@ async function run() {
   try {
     // get homework name and deadline
     states.homework = parseHomeworkName(states.repo);
-    states.deadline = DateTime.fromISO(`${deadlines[states.homework]}T23:59:59`, {zone: zone});
-    states.deadline_text = states.deadline.toLocaleString(DateTime.DATETIME_FULL);
-    core.info(`Homework ${states.homework} due on ${states.deadline_text}.`);
 
     // get student information from issue body
     const student = parseIssueBody(github.context.payload.issue.body);
     core.info(`Student details: ${JSON.stringify(student)}`);
-    states.student = student.name;
-    states.username = student.username;
+    states.fullname = student.name;
+    states.username = student.user;
 
     // get the run information
     const list_result = await octokit.rest.actions.listWorkflowRuns({
       owner: states.owner,
       repo: states.repo,
       workflow_id: 'classroom.yml',
-      // TODO Removing due to indexing issues
-      //branch: 'main',
-      //event: 'push',
-      //status: 'completed',
+      branch: 'main',
+      status: 'completed',
       per_page: 100
     });
 
@@ -134,6 +107,7 @@ async function run() {
 
       if (student.hasOwnProperty("runid")) {
         // find associated run
+        core.info(`Attempting to find run ${student.runid}...`);
         found = runs.find(r => parseInt(r.id) === parseInt(student.runid));
       }
 
@@ -142,7 +116,7 @@ async function run() {
         found = runs.shift();
       }
 
-      states.submitted_id = found.id;
+      states.submitted_id   = found.id;
       states.submitted_date = found.run_date;
       states.submitted_text = found.run_date.toLocaleString(DateTime.DATETIME_FULL);
 
@@ -160,35 +134,16 @@ async function run() {
     });
 
     if (file_result.status === 200 && file_result.data.total_count > 0) {
-      states.submitted_points = parseInt(file_result.data.artifacts[0].name);
+      const results_text = fs.readFileSync(`./${file_result.data.artifacts[0].name}`, 'utf8');
+      const results_json = JSON.parse(results_text);
 
-      if (states.submitted_points === NaN) {
-        throw new Error(`Unable to parse points from artifact name: ${file_result.artifacts[0].name}`);
+      for (const property in results_json) {
+        console.log(`${property}: ${results_json[property]}`);
+        states[property] = results_json[property];
       }
     }
     else {
       throw new Error(`Unable to fetch workflow artifacts. Status: ${file_result.status} Count: ${file_result.data.total_count}`);
-    }
-
-    // calculate grade penalty
-    states.late_multiplier = 0;
-    states.late_deduction = 0;
-    states.late_grade = states.submitted_points;
-
-    if (states.submitted_date <= states.deadline) {
-      core.warning(`The run id ${states.submitted_id} was submitted on ${states.submitted_text}, before the ${states.deadline_text} deadline for the ${states.homework} assignment.`);
-    }
-    else {
-      const late_diff = states.submitted_date.diff(states.deadline, 'hours');
-      const late_hours = late_diff.toObject().hours;
-
-      core.info(`The run id ${states.submitted_id} was submitted on ${states.submitted_text}, which is ${Math.round(late_hours)} hours after the ${states.deadline_text} deadline for the ${states.homework} assignment.`);
-
-      states.late_multiplier = 1 + Math.floor(late_hours / duration);
-      states.late_deduction = Math.min(penalty, states.late_multiplier * deduction);
-      states.late_grade = states.submitted_points - states.late_deduction;
-
-      core.notice(`Using a ${states.late_multiplier}x late penalty multiplier for a deduction of ${states.late_deduction} points and late grade of ${states.late_grade} points.`);
     }
 
     // add a comment with the details
@@ -197,19 +152,19 @@ async function run() {
 
 |  |  |
 |----:|:-----|
-| Student: | ${states.student} |
+| Student: | ${states.fullname} |
 | Username: | \`${states.username}\` |
 | | |
-| Homework: | \`${states.homework}\` |
+| Homework: | \`${states.assignment_name}\` |
 | Deadline: | ${states.deadline_text} |
 | Submitted: | ${states.submitted_text} |
 | | |
 | Autograder Run: | [Run ID ${states.submitted_id}](${states.repo_url}/actions/runs/${states.submitted_id}) |
-| Autograder Grade: | ${states.submitted_points} points |
+| Autograder Grade: | ${states.grade_starting} points |
 | | |
-| Late Grade: | ${states.late_grade} points |
-| Late Penalty: | ${states.late_deduction} points |
-| Late Days: | ${states.late_multiplier} days |
+| Late Hours: |  ${states.late_interval} hours (x${states.late_multiplier} multiplier) |
+| Late Penalty: | -${states.late_points} points |
+| Late Grade: |  **${states.grade_points}** / ${states.grade_possible} points (${states.grade_percent}%) |
 
 You will receive a notice once your grade has been updated on Canvas.
 `;

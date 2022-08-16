@@ -1,9 +1,12 @@
 const core = require('@actions/core');
 const github = require('@actions/github');
 
+const artifact = require('@actions/artifact');
+const artifactClient = artifact.create();
+
 const fs = require('fs');
-const { DateTime } = require('luxon');
-const zone = 'America/Los_Angeles';
+// const { DateTime } = require('luxon');
+// const zone = 'America/Los_Angeles';
 
 // instructor and teacher assistants
 const assignees = [
@@ -101,9 +104,9 @@ async function run() {
       core.info(`Found ${runs.length} completed workflow runs...`);
 
       // convert run date for each run
-      runs.forEach(run => {
-        run.run_date = DateTime.fromISO(run.run_started_at, {zone: zone});
-      });
+      // runs.forEach(run => {
+      //   run.run_date = DateTime.fromISO(run.run_started_at, {zone: zone});
+      // });
 
       if (student.hasOwnProperty("runid")) {
         // find associated run
@@ -117,10 +120,10 @@ async function run() {
       }
 
       states.submitted_id   = found.id;
-      states.submitted_date = found.run_date;
-      states.submitted_text = found.run_date.toLocaleString(DateTime.DATETIME_FULL);
+      // states.submitted_date = found.run_date;
+      // states.submitted_text = found.run_date.toLocaleString(DateTime.DATETIME_FULL);
 
-      core.info(`Using workflow run id ${states.submitted_id} from ${states.submitted_text}.`);
+      core.info(`Using workflow run id: ${states.submitted_id}`);
     }
     else {
       throw new Error(`Unable to fetch workflow runs. Status: ${list_result.status} Count: ${list_result.data.total_count}`);
@@ -134,7 +137,10 @@ async function run() {
     });
 
     if (file_result.status === 200 && file_result.data.total_count > 0) {
-      const results_text = fs.readFileSync(`./${file_result.data.artifacts[0].name}`, 'utf8');
+      const downloaded = await artifactClient.downloadArtifact('check-deadline-results', '.');
+      core.info(JSON.stringify(downloaded));
+
+      const results_text = fs.readFileSync('./check-deadline-results.json', 'utf8');
       const results_json = JSON.parse(results_text);
 
       for (const property in results_json) {

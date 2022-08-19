@@ -37,7 +37,7 @@ runs:
               try {
                 const parsed = JSON.parse(matched[1]);
 
-                if (!parsed.hasOwnProperty('runid')) {
+                if (parsed.hasOwnProperty('runid')) {
                   core.setOutput('GRADE_RUNID', `${parsed.runid}`);
                   core.info(JSON.stringify(context));
                 }

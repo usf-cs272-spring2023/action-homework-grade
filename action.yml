@@ -87,6 +87,8 @@ runs:
       with:
         script: |
           try {
+            core.info(JSON.stringify(process.env));
+            
             const student = JSON.parse(process.env.STUDENT_JSON);
             const results = JSON.parse(process.env.RESULTS_JSON);
 

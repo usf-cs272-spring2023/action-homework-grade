@@ -15,13 +15,12 @@ inputs:
     description: 'Name of workflow'
     required: true
 
+env:
+  ERROR_MESSAGE: 'Unknown error.'
+  GRADE_RUN: '2891094643'
+
 runs:
   using: 'composite'
-
-  env:
-    ERROR_MESSAGE: 'Unknown error.'
-    GRADE_RUN: '2891094643'
-
   steps:
     - name: Parse Issue
       id: parse-issue
@@ -30,6 +29,8 @@ runs:
         result-encoding: string
         script: |
           try {
+            core.info(JSON.stringify(process.env));
+
             core.info(`Parsing issue body...`);
             const body = context.payload.issue.body;
             const pattern = /```json([^`]+)```/;
@@ -66,7 +67,7 @@ runs:
       shell: bash
       run: |
         echo "hello world"
-        echo "env.GRADE_RUN: ${{ env.GRADE_RUN }}, GRADE_RUN: $GRADE_RUN"
+        echo "env.GRADE_RUN: ${{ env.grade_run }}, GRADE_RUN: $GRADE_RUN"
 
     - name: Check Results
       id: check-results

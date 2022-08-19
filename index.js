@@ -141,16 +141,21 @@ async function run() {
       });
 
       if (download_result.status === 200) {
-        core.info(JSON.stringify(download_result));
+        core.info(`Downloading from: ${download_result.url}`);
 
         https.get(download_result.url, function(response) {
-          console.log("statusCode: ", response.statusCode);
-          console.log("headers: ", response.headers);
+          core.info(`Download status: ${response.statusCode}`);
+
+          if (response.statusCode !== 200) {
+            core.group('Download headers...');
+            core.info(JSON.stringify(response.headers));
+            core.endGroup();
+          }
 
           response.on('data', function(d) {
             process.stdout.write(d);
           });
-        }).on('error', function(e) {
+        }).on('error', function(e) { 
           throw e;
         });
       }

@@ -6,6 +6,42 @@ inputs:
     description: 'Authentication token to access repositories'
     required: true
 
+# runs:
+#   using: 'node16'
+#   main: 'index.js'
+
 runs:
-  using: 'node16'
-  main: 'index.js'
+  using: 'composite'
+  steps:
+    - name: Parse Issue
+      id: parse-issue
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const body = context.payload.issue.body;
+          const pattern = /```json([^`]+)```/;
+          const matched = body.match(pattern);
+
+          if (matched !== null && matched.length === 2) {
+            try {
+              const parsed = JSON.parse(matched[1]);
+
+              if (parsed.hasOwnProperty('name') && parsed.hasOwnProperty('user')) {
+                core.info(JSON.stringify(parsed));
+                return parsed;
+              }
+
+              core.setFailed(`Required "name" and "user" properties missing from issue body.`);
+            }
+            catch (error) {
+              core.setFailed(`Unable to parse issue body as JSON. Error: ${error.message}`);
+            }
+          }
+          else {
+            core.setFailed(`Unable to find JSON details from issue body. Found: ${matched}`);
+          }
+
+
+# 1. Get student name, email, and run from issue body.
+# 2. Get artifact from workflow run.
+# 3. Respond to issue.

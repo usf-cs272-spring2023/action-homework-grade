@@ -133,12 +133,12 @@ runs:
               repo: context.repo.repo,
               issue_number: context.issue.number,
               body: `
-                :stop_sign: @${context.actor} there was a problem with your request:
+          :stop_sign: @${context.actor} there was a problem with your request:
 
-                > ${process.env.ERROR_MESSAGE}
+          > ${process.env.ERROR_MESSAGE}
 
-                See [run ${context.runId}](${context.payload.repository.html_url}/actions/runs/${context.runId}) for details. 
-                After the problems have been addressed, remove the \`error\` label and re-open this issue.
+          See [run ${context.runId}](${context.payload.repository.html_url}/actions/runs/${context.runId}) for details. 
+          After the problems have been addressed, remove the \`error\` label and re-open this issue.
               `
             });
             

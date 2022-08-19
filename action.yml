@@ -15,6 +15,9 @@ inputs:
     description: 'Name of workflow'
     required: true
 
+env:
+  ERROR_MESSAGE: 'Unknown error.'
+
 runs:
   using: 'composite'
   steps:
@@ -23,32 +26,41 @@ runs:
       uses: actions/github-script@v6
       with:
         script: |
-          core.info(`Parsing issue body...`);
-          const body = context.payload.issue.body;
-          const pattern = /```json([^`]+)```/;
-          const matched = body.match(pattern);
+          try {
+            core.info(`Parsing issue body...`);
+            const body = context.payload.issue.body;
+            const pattern = /```json([^`]+)```/;
+            const matched = body.match(pattern);
 
-          if (matched !== null && matched.length === 2) {
-            try {
-              const parsed = JSON.parse(matched[1]);
+            if (matched !== null && matched.length === 2) {
+              try {
+                const parsed = JSON.parse(matched[1]);
 
-              if (!parsed.hasOwnProperty('runid')) {
-                parsed.runid = '';
+                if (!parsed.hasOwnProperty('runid')) {
+                  parsed.runid = '';
+                }
+
+                if (parsed.hasOwnProperty('name') && parsed.hasOwnProperty('user')) {
+                  core.info(JSON.stringify(parsed));
+                  return parsed;
+                }
+
+                core.exportVariable('ERROR_MESSAGE', `Required "name" and "user" properties missing from issue body.`);
+                core.setFailed(process.env.ERROR_MESSAGE);
               }
-
-              if (parsed.hasOwnProperty('name') && parsed.hasOwnProperty('user')) {
-                core.info(JSON.stringify(parsed));
-                return parsed;
+              catch (error) {
+                core.exportVariable('ERROR_MESSAGE', `Unable to parse issue body as JSON. Error: ${error.message}`);
+                core.setFailed(process.env.ERROR_MESSAGE);
               }
-
-              core.setFailed(`Required "name" and "user" properties missing from issue body.`);
             }
-            catch (error) {
-              core.setFailed(`Unable to parse issue body as JSON. Error: ${error.message}`);
+            else {
+              core.exportVariable('ERROR_MESSAGE', `Unable to find JSON details from issue body. Found: ${matched}`);
+              core.setFailed(process.env.ERROR_MESSAGE);
             }
           }
-          else {
-            core.setFailed(`Unable to find JSON details from issue body. Found: ${matched}`);
+          catch (error) {
+            core.exportVariable('ERROR_MESSAGE', error.message);
+            core.setFailed(process.env.ERROR_MESSAGE);
           }
 
     - name: Check Results
@@ -61,20 +73,85 @@ runs:
         workflow_name: "${{ inputs.workflow_name }}"
         workflow_run:  "${{ steps.parse-issue.outputs.result.runid }}"
 
-    - name: Display Results
-      id: display-results
+    - name: Check Success
       uses: actions/github-script@v6
       env:
         RESULTS_JSON: "${{ steps.check-results.outputs.json_string }}"
       with:
         script: |
-          const output = JSON.parse(process.env.RESULTS_JSON);
+          try {
+            const config = steps.parse-issue.outputs.result;
+            const output = JSON.parse(process.env.RESULTS_JSON);
 
-          for (const property in output) {
-            core.info(`${property}: ${JSON.stringify(output[property])}`);
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `
+                :octocat: @${context.actor} your grade request has been processed! See the details below:
+
+                |  |  |
+                |----:|:-----|
+                |  Student: | ${config.name} |
+                | Username: | \`${config.user}\` |
+                | | |
+                | Assignment: | ${output.assignment_name} |
+                |   Deadline: | ${output.deadline_text} |
+                |  Submitted: | ${output.submitted_text} |
+                |   Workflow: | [Run ${output.workflow_run}](${context.payload.repository.html_url}/actions/runs/${output.workflow_run}) |
+                | | |
+                | Late Interval: | ${output.late_interval} hours (x${output.late_multiplier} multiplier) |
+                | Late Penalty:  | -${output.late_points} points (-${output.late_percent}%) |
+                | Late Grade:    | **${output.grade_points}** / ${output.grade_possible} points (${output.grade_percent} %) |
+
+                You will receive a notice once your grade has been updated on Canvas.
+              `
+            });
+            
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              state: 'open',
+              labels: ['grade-homework'],
+              assignees: ['igentle292','mtquach2','par5ul1']
+            });
+          }
+          catch (error) {
+            core.exportVariable('ERROR_MESSAGE', error.message);
+            core.setFailed(process.env.ERROR_MESSAGE);
           }
 
-          return output;
-# 1. Get student name, email, and run from issue body.
-# 2. Get artifact from workflow run.
-# 3. Respond to issue.
+    - name: Check Failure
+      uses: actions/github-script@v6
+      if: ${{ failure() }}
+      with:
+        script: |
+          try {
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `
+                :stop_sign: @${context.actor} there was a problem with your request:
+
+                > ${process.env.ERROR_MESSAGE}
+
+                See [run ${context.runId}](${context.payload.repository.html_url}/actions/runs/${context.runId}) for details. 
+                After the problems have been addressed, remove the \`error\` label and re-open this issue.
+              `
+            });
+            
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              state: 'closed',
+              labels: ['error'],
+              assignees: [context.actor]
+            });
+          }
+          catch (error) {
+            core.exportVariable('ERROR_MESSAGE', error.message);
+            core.setFailed(process.env.ERROR_MESSAGE);
+          }

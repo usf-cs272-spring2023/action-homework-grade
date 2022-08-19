@@ -1,14 +1,19 @@
 name: 'Grade Homework'
 description: 'Request homework grade for late submissions'
 
-# inputs:
-#   token:
-#     description: 'Authentication token to access repositories'
-#     required: true
-
-# runs:
-#   using: 'node16'
-#   main: 'index.js'
+inputs:
+  access_token:
+    description: 'Authentication token to access repositories'
+    required: true
+  artifact_name:
+    description: 'Name of artifact'
+    required: true
+  artifact_json:
+    description: 'Name of artifact JSON file'
+    required: true
+  workflow_name:
+    description: 'Name of workflow'
+    required: true
 
 runs:
   using: 'composite'
@@ -50,11 +55,11 @@ runs:
       id: check-results
       uses: usf-cs272-fall2022/action-check-results@main
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        workflow_run: ${{ steps.parse-issue.outputs.result.runid }}
-        artifact_name: "check-deadline-results"
-        artifact_json: "check-deadline-results.json"
-        workflow_name: "classroom.yml"
+        access_token:  "${{ inputs.access_token }}"
+        artifact_name: "${{ inputs.artifact_name }}"
+        artifact_json: "${{ inputs.artifact_json }}"
+        workflow_name: "${{ inputs.workflow_name }}"
+        workflow_run:  "${{ steps.parse-issue.outputs.result.runid }}"
 
     - name: Display Results
       id: display-results

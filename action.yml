@@ -17,7 +17,7 @@ inputs:
 
 env:
   ERROR_MESSAGE: 'Unknown error.'
-  WORKFLOW_RUNID: '2891094643'
+  WORKFLOW_RUNID: ''
 
 runs:
   using: 'composite'
@@ -39,7 +39,7 @@ runs:
                 const parsed = JSON.parse(matched[1]);
 
                 if (!parsed.hasOwnProperty('runid')) {
-                  core.exportVariable('WORKFLOW_RUNID', `${parsed.runid}`);
+                  core.exportVariable('WORKFLOW_RUNID', `2891094643`);
                 }
 
                 if (parsed.hasOwnProperty('name') && parsed.hasOwnProperty('user')) {

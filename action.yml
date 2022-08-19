@@ -76,11 +76,12 @@ runs:
     - name: Check Success
       uses: actions/github-script@v6
       env:
+        STUDENT_JSON: ${{ steps.parse-issue.outputs.result }}
         RESULTS_JSON: "${{ steps.check-results.outputs.json_string }}"
       with:
         script: |
           try {
-            const config = steps.parse-issue.outputs.result;
+            const config = process.env.STUDENT_JSON;
             const output = JSON.parse(process.env.RESULTS_JSON);
 
             await github.rest.issues.createComment({
@@ -88,23 +89,23 @@ runs:
               repo: context.repo.repo,
               issue_number: context.issue.number,
               body: `
-                :octocat: @${context.actor} your grade request has been processed! See the details below:
+          :octocat: @${context.actor} your grade request has been processed! See the details below:
 
-                |  |  |
-                |----:|:-----|
-                |  Student: | ${config.name} |
-                | Username: | \`${config.user}\` |
-                | | |
-                | Assignment: | ${output.assignment_name} |
-                |   Deadline: | ${output.deadline_text} |
-                |  Submitted: | ${output.submitted_text} |
-                |   Workflow: | [Run ${output.workflow_run}](${context.payload.repository.html_url}/actions/runs/${output.workflow_run}) |
-                | | |
-                | Late Interval: | ${output.late_interval} hours (x${output.late_multiplier} multiplier) |
-                | Late Penalty:  | -${output.late_points} points (-${output.late_percent}%) |
-                | Late Grade:    | **${output.grade_points}** / ${output.grade_possible} points (${output.grade_percent} %) |
+          |  |  |
+          |----:|:-----|
+          |  Student: | ${config.name} |
+          | Username: | \`${config.user}\` |
+          | | |
+          | Assignment: | ${output.assignment_name} |
+          |   Deadline: | ${output.deadline_text} |
+          |  Submitted: | ${output.submitted_text} |
+          |   Workflow: | [Run ${output.workflow_run}](${context.payload.repository.html_url}/actions/runs/${output.workflow_run}) |
+          | | |
+          | Late Interval: | ${output.late_interval} hours (x${output.late_multiplier} multiplier) |
+          | Late Penalty:  | -${output.late_points} points (-${output.late_percent}%) |
+          | Late Grade:    | **${output.grade_points}** / ${output.grade_possible} points (${output.grade_percent} %) |
 
-                You will receive a notice once your grade has been updated on Canvas.
+          You will receive a notice once your grade has been updated on Canvas.
               `
             });
             
@@ -137,8 +138,7 @@ runs:
 
           > ${process.env.ERROR_MESSAGE}
 
-          See [run ${context.runId}](${context.payload.repository.html_url}/actions/runs/${context.runId}) for details. 
-          After the problems have been addressed, remove the \`error\` label and re-open this issue.
+          See [run ${context.runId}](${context.payload.repository.html_url}/actions/runs/${context.runId}) for details. After the problems have been addressed, remove the \`error\` label and re-open this issue.
               `
             });
             

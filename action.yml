@@ -61,6 +61,12 @@ runs:
             core.setFailed(process.env.ERROR_MESSAGE);
           }
 
+    - name: Temp
+      shell: bash
+      run: |
+        echo "hello world"
+        echo "${{ env.GRADE_RUN }}"
+
     - name: Check Results
       id: check-results
       uses: usf-cs272-fall2022/action-check-results@main

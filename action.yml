@@ -25,10 +25,6 @@ runs:
         result-encoding: string
         script: |
           try {
-            core.info(JSON.stringify(process.env));
-            core.exportVariable('GRADE_RUNID', "Testing");
-            core.info(JSON.stringify(process.env));
-
             core.info(`Parsing issue body...`);
             const body = context.payload.issue.body;
             const pattern = /```json([^`]+)```/;
@@ -65,12 +61,6 @@ runs:
             core.setFailed(process.env.ERROR_MESSAGE);
           }
 
-    - name: Test
-      uses: actions/github-script@v6
-      with:
-        script: |
-          core.info(JSON.stringify(process.env));
-
     - name: Check Results
       id: check-results
       uses: usf-cs272-fall2022/action-check-results@main
@@ -79,7 +69,7 @@ runs:
         artifact_name: "${{ inputs.artifact_name }}"
         artifact_json: "${{ inputs.artifact_json }}"
         workflow_name: "${{ inputs.workflow_name }}"
-        workflow_run:  "${{ env.GRADE_RUN }}"
+        workflow_run:  "${{ env.GRADE_RUNID }}"
 
     - name: Check Success
       uses: actions/github-script@v6

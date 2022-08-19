@@ -39,6 +39,7 @@ runs:
 
                 if (!parsed.hasOwnProperty('runid')) {
                   core.setOutput('GRADE_RUNID', `${parsed.runid}`);
+                  core.info(JSON.stringify(context));
                 }
 
                 if (parsed.hasOwnProperty('name') && parsed.hasOwnProperty('user')) {
@@ -47,8 +48,6 @@ runs:
                 }
 
                 core.setOutput('ERROR_MESSAGE', `Required "name" and "user" properties missing from issue body.`);
-
-                core.info(JSON.stringify(context));
                 core.setFailed(process.env.ERROR_MESSAGE);
               }
               catch (error) {

@@ -103,7 +103,7 @@ runs:
           | | |
           | Late Interval: | ${output.late_interval} hours (x${output.late_multiplier} multiplier) |
           | Late Penalty:  | -${output.late_points} points (-${output.late_percent}%) |
-          | Late Grade:    | **${output.grade_points}** / ${output.grade_possible} points (${output.grade_percent} %) |
+          | Late Grade:    | **${output.grade_points}** / ${output.grade_possible} points (${output.grade_percent}%) |
 
           You will receive a notice once your grade has been updated on Canvas.
               `
@@ -115,7 +115,7 @@ runs:
               issue_number: context.issue.number,
               state: 'open',
               labels: ['grade-homework'],
-              assignees: ['igentle292','mtquach2','par5ul1']
+              assignees: ['sjengle'] // ['igentle292','mtquach2','par5ul1']
             });
           }
           catch (error) {

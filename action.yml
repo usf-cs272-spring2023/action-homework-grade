@@ -25,6 +25,7 @@ runs:
       id: parse-issue
       uses: actions/github-script@v6
       with:
+        result-encoding: string
         script: |
           try {
             core.info(`Parsing issue body...`);
@@ -42,7 +43,7 @@ runs:
 
                 if (parsed.hasOwnProperty('name') && parsed.hasOwnProperty('user')) {
                   core.info(JSON.stringify(parsed));
-                  return parsed;
+                  return JSON.stringify(parsed);
                 }
 
                 core.exportVariable('ERROR_MESSAGE', `Required "name" and "user" properties missing from issue body.`);
@@ -76,13 +77,13 @@ runs:
     - name: Check Success
       uses: actions/github-script@v6
       env:
-        STUDENT_NAME: "${{ steps.parse-issue.outputs.result.name }}"
-        STUDENT_USER: "${{ steps.parse-issue.outputs.result.user }}"
+        STUDENT_JSON: "${{ steps.parse-issue.outputs.result }}"
         RESULTS_JSON: "${{ steps.check-results.outputs.json_string }}"
       with:
         script: |
           try {
-            const output = JSON.parse(process.env.RESULTS_JSON);
+            const student = JSON.parse(process.env.STUDENT_JSON);
+            const results = JSON.parse(process.env.RESULTS_JSON);
 
             await github.rest.issues.createComment({
               owner: context.repo.owner,
@@ -93,17 +94,17 @@ runs:
 
           |  |  |
           |----:|:-----|
-          |  Student: | ${process.env.STUDENT_NAME} |
-          | Username: | \`${process.env.STUDENT_USER}\` |
+          |  Student: | ${student.name} |
+          | Username: | \`${student.user}\` |
           | | |
-          | Assignment: | ${output.assignment_name} |
-          |   Deadline: | ${output.deadline_text} |
-          |  Submitted: | ${output.submitted_text} |
-          |   Workflow: | [Run ${output.workflow_run}](${context.payload.repository.html_url}/actions/runs/${output.workflow_run}) |
+          | Assignment: | ${results.assignment_name} |
+          |   Deadline: | ${results.deadline_text} |
+          |  Submitted: | ${results.submitted_text} |
+          |   Workflow: | [Run ${results.workflow_run}](${context.payload.repository.html_url}/actions/runs/${results.workflow_run}) |
           | | |
-          | Late Interval: | ${output.late_interval} hours (x${output.late_multiplier} multiplier) |
-          | Late Penalty:  | -${output.late_points} points (-${output.late_percent}%) |
-          | Late Grade:    | **${output.grade_points}** / ${output.grade_possible} points (${output.grade_percent}%) |
+          | Late Interval: | ${results.late_interval} hours (x${results.late_multiplier} multiplier) |
+          | Late Penalty:  | -${results.late_points} points (-${results.late_percent}%) |
+          | Late Grade:    | **${results.grade_points}** / ${results.grade_possible} points (${results.grade_percent}%) |
 
           You will receive a notice once your grade has been updated on Canvas.
               `

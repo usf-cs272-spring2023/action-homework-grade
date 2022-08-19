@@ -17,7 +17,7 @@ inputs:
 
 env:
   ERROR_MESSAGE: 'Unknown error.'
-  WORKFLOW_RUNID: ''
+  WORKFLOW_RUNID: '2891094643'
 
 runs:
   using: 'composite'
@@ -73,7 +73,7 @@ runs:
         artifact_name: "${{ inputs.artifact_name }}"
         artifact_json: "${{ inputs.artifact_json }}"
         workflow_name: "${{ inputs.workflow_name }}"
-        workflow_run:  "2891094643"
+        workflow_run:  "${{ env.WORKFLOW_RUNID }}"
 
     - name: Check Success
       uses: actions/github-script@v6

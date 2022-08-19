@@ -65,7 +65,7 @@ runs:
       shell: bash
       run: |
         echo "hello world"
-        echo "${{ env.GRADE_RUN }}"
+        echo "env.GRADE_RUN: ${{ env.GRADE_RUN }}, GRADE_RUN: $GRADE_RUN"
 
     - name: Check Results
       id: check-results

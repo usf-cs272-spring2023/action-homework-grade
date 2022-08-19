@@ -76,12 +76,12 @@ runs:
     - name: Check Success
       uses: actions/github-script@v6
       env:
-        STUDENT_JSON: ${{ steps.parse-issue.outputs.result }}
+        STUDENT_NAME: "${{ steps.parse-issue.outputs.result.name }}"
+        STUDENT_USER: "${{ steps.parse-issue.outputs.result.user }}"
         RESULTS_JSON: "${{ steps.check-results.outputs.json_string }}"
       with:
         script: |
           try {
-            const config = process.env.STUDENT_JSON;
             const output = JSON.parse(process.env.RESULTS_JSON);
 
             await github.rest.issues.createComment({
@@ -93,8 +93,8 @@ runs:
 
           |  |  |
           |----:|:-----|
-          |  Student: | ${config.name} |
-          | Username: | \`${config.user}\` |
+          |  Student: | ${process.env.STUDENT_NAME} |
+          | Username: | \`${process.env.STUDENT_USER}\` |
           | | |
           | Assignment: | ${output.assignment_name} |
           |   Deadline: | ${output.deadline_text} |

@@ -17,7 +17,7 @@ inputs:
 
 env:
   ERROR_MESSAGE: 'Unknown error.'
-  WORKFLOW_RUN: ''
+  WORKFLOW_RUNID: ''
 
 runs:
   using: 'composite'
@@ -39,7 +39,7 @@ runs:
                 const parsed = JSON.parse(matched[1]);
 
                 if (!parsed.hasOwnProperty('runid')) {
-                  core.exportVariable('WORKFLOW_RUN', parseInt(parsed.runid));
+                  core.exportVariable('WORKFLOW_RUNID', `${parsed.runid}`);
                 }
 
                 if (parsed.hasOwnProperty('name') && parsed.hasOwnProperty('user')) {
@@ -73,7 +73,7 @@ runs:
         artifact_name: "${{ inputs.artifact_name }}"
         artifact_json: "${{ inputs.artifact_json }}"
         workflow_name: "${{ inputs.workflow_name }}"
-        workflow_run:  "${{ env.WORKFLOW_RUN }}"
+        workflow_run:  "${{ env.WORKFLOW_RUNID }}"
 
     - name: Check Success
       uses: actions/github-script@v6

@@ -21,13 +21,14 @@ runs:
     - name: Parse Issue
       id: parse-issue
       uses: actions/github-script@v6
-      env:
-        ERROR_MESSAGE: 'Unknown error.'
-        GRADE_RUNID: ''
       with:
         result-encoding: string
         script: |
           try {
+            core.info(JSON.stringify(process.env));
+            core.exportVariable('GRADE_RUNID', "Testing");
+            core.info(JSON.stringify(process.env));
+
             core.info(`Parsing issue body...`);
             const body = context.payload.issue.body;
             const pattern = /```json([^`]+)```/;
@@ -38,8 +39,7 @@ runs:
                 const parsed = JSON.parse(matched[1]);
 
                 if (parsed.hasOwnProperty('runid')) {
-                  core.setOutput('GRADE_RUNID', `${parsed.runid}`);
-                  core.info(JSON.stringify(context));
+                  core.exportVariable('GRADE_RUNID', `${parsed.runid}`);
                 }
 
                 if (parsed.hasOwnProperty('name') && parsed.hasOwnProperty('user')) {
@@ -47,7 +47,7 @@ runs:
                   return JSON.stringify(parsed);
                 }
 
-                core.setOutput('ERROR_MESSAGE', `Required "name" and "user" properties missing from issue body.`);
+                core.exportVariable('ERROR_MESSAGE', `Required "name" and "user" properties missing from issue body.`);
                 core.setFailed(process.env.ERROR_MESSAGE);
               }
               catch (error) {
@@ -65,11 +65,11 @@ runs:
             core.setFailed(process.env.ERROR_MESSAGE);
           }
 
-    - name: Temp
-      shell: bash
-      run: |
-        echo "hello world"
-        echo "env.GRADE_RUN: ${{ env.grade_run }}, GRADE_RUN: $GRADE_RUN"
+    - name: Test
+      uses: actions/github-script@v6
+      with:
+        script: |
+          core.info(JSON.stringify(process.env));
 
     - name: Check Results
       id: check-results

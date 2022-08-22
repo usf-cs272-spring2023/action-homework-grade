@@ -113,7 +113,7 @@ runs:
               issue_number: context.issue.number,
               state: 'open',
               labels: ['grade-homework'],
-              assignees: ['sjengle'] // ['igentle292','mtquach2','par5ul1']
+              assignees: ['mtquach2','par5ul1'] // 'igentle292'
             });
           }
           catch (error) {

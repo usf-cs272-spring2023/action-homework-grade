@@ -106,14 +106,23 @@ runs:
           You will receive a notice once your grade has been updated on Canvas.
               `
             });
+
+            let assignees = undefined;
             
+            if (context.repo.owner == 'usf-cs272-03-fall2022') {
+              assignees = ['mtquach2', 'ybsolomon'];
+            }
+            else {
+              assignees = ['mtquach2', 'par5ul1', 'igentle292'];
+            }
+
             await github.rest.issues.update({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
               state: 'open',
               labels: ['grade-homework'],
-              assignees: ['mtquach2', 'par5ul1', 'igentle292']
+              assignees: assignees
             });
           }
           catch (error) {

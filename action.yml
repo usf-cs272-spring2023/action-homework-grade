@@ -27,32 +27,39 @@ runs:
           try {
             core.info(`Parsing issue body...`);
             const body = context.payload.issue.body;
-            const pattern = /```json([^`]+)```/;
-            const matched = body.match(pattern);
+            // const pattern = /```json([^`]+)```/;
+            // const matched = body.match(pattern);
 
-            if (matched !== null && matched.length === 2) {
+            const pattern = /^### Full Name\s+([^\n]+)\s+### USF Email\s+([^\n]+)\b\s*$/;
+            const matched = body.match(pattern);
+            core.info(matched);
+
+            if (matched !== null && matched.length === 3) {
               try {
-                const parsed = JSON.parse(matched[1]);
+                const parsed = {
+                  'name': matched[1],
+                  'email': matched[2],
+                };
 
                 if (parsed.hasOwnProperty('runid')) {
                   core.exportVariable('GRADE_RUNID', `${parsed.runid}`);
                 }
 
-                if (parsed.hasOwnProperty('name') && parsed.hasOwnProperty('user')) {
+                if (parsed.hasOwnProperty('name') && parsed.hasOwnProperty('email')) {
                   core.info(JSON.stringify(parsed));
                   return JSON.stringify(parsed);
                 }
 
-                core.exportVariable('ERROR_MESSAGE', `Required "name" and "user" properties missing from issue body.`);
+                core.exportVariable('ERROR_MESSAGE', `Required "name" and "email" properties missing from issue body.`);
                 core.setFailed(process.env.ERROR_MESSAGE);
               }
               catch (error) {
-                core.exportVariable('ERROR_MESSAGE', `Unable to parse issue body as JSON. Error: ${error.message}`);
+                core.exportVariable('ERROR_MESSAGE', `Unable to parse issue body. Error: ${error.message}`);
                 core.setFailed(process.env.ERROR_MESSAGE);
               }
             }
             else {
-              core.exportVariable('ERROR_MESSAGE', `Unable to find JSON details from issue body. Found: ${matched}`);
+              core.exportVariable('ERROR_MESSAGE', `Unable to find student details from issue body. Found: ${matched}`);
               core.setFailed(process.env.ERROR_MESSAGE);
             }
           }
@@ -63,7 +70,7 @@ runs:
 
     - name: Check Results
       id: check-results
-      uses: usf-cs272-fall2022/action-check-results@main
+      uses: usf-cs272-spring2023/action-check-results@main
       with:
         access_token:  "${{ inputs.access_token }}"
         artifact_name: "${{ inputs.artifact_name }}"
@@ -91,8 +98,8 @@ runs:
 
           |  |  |
           |----:|:-----|
-          |  Student: | ${student.name} |
-          | Username: | \`${student.user}\` |
+          |   Student: | ${student.name} |
+          | USF Email: | \`${student.email}\` |
           | | |
           | Assignment: | ${results.assignment_name} |
           |   Deadline: | ${results.deadline_text} |
@@ -107,14 +114,7 @@ runs:
               `
             });
 
-            let assignees = undefined;
-            
-            if (context.repo.owner == 'usf-cs272-03-fall2022') {
-              assignees = ['mtquach2', 'ybsolomon'];
-            }
-            else {
-              assignees = ['mtquach2', 'par5ul1', 'igentle292'];
-            }
+            let assignees = ['sjengle'];
 
             await github.rest.issues.update({
               owner: context.repo.owner,

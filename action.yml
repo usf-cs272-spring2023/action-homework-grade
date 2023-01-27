@@ -114,7 +114,7 @@ runs:
               `
             });
 
-            let assignees = ['sjengle'];
+            let assignees = ['halenander', 'mtquach2', 'ybsolomon'];
 
             await github.rest.issues.update({
               owner: context.repo.owner,
